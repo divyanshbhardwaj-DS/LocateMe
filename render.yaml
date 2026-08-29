@@ -23,8 +23,9 @@ services:
         sync: false
 
   # ---------- Frontend (React + Vite static site) ----------
-  - type: static
+  - type: web
     name: locateme-frontend
+    runtime: static
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
