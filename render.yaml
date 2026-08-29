@@ -32,6 +32,12 @@ services:
     buildFilter:
       paths:
         - frontend/**
+    # SPA fallback: serve index.html for client-side routes like /admin/login,
+    # /home, etc. Existing static assets are still served directly.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_API_URL
         sync: false
