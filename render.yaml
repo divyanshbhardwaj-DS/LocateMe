@@ -6,7 +6,6 @@ services:
   - type: web
     name: locateme-api
     runtime: docker
-    repo: https://github.com/divyanshbhardwaj-DS/LocateMe
     plan: free
     dockerfilePath: ./Dockerfile
     rootDir: backend
@@ -24,13 +23,11 @@ services:
         sync: false
 
   # ---------- Frontend (React + Vite static site) ----------
-  - type: web
+  - type: static
     name: locateme-frontend
-    runtime: static
-    repo: https://github.com/divyanshbhardwaj-DS/LocateMe
     rootDir: frontend
     buildCommand: npm ci && npm run build
-    publishPath: dist
+    staticPublishPath: dist
     buildFilter:
       paths:
         - frontend/**
