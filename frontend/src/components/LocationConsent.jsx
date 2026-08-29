@@ -6,6 +6,7 @@ import {
   acquireBestPosition,
   cancelAcquisition,
   queryPermission,
+  tierLabel,
 } from '../services/geoAcquire.js'
 
 /**
@@ -19,8 +20,9 @@ import {
 export default function LocationConsent({ onLocated }) {
   const [state, setState] = useState('intro')
   const [errorDetail, setErrorDetail] = useState('')
-  const [bestAccuracy, setBestAccuracy] = useState(null)
+  const [bestTier, setBestTier] = useState(null)
   const [readsSoFar, setReadsSoFar] = useState(0)
+  const [finalOutcome, setFinalOutcome] = useState(null)
   const [treatedAsRequired, setTreatedAsRequired] = useState(true)
   const reduceMotion = useReducedMotion()
 
@@ -32,8 +34,9 @@ export default function LocationConsent({ onLocated }) {
   const requestLocation = useCallback(async () => {
     setState('requesting')
     setErrorDetail('')
-    setBestAccuracy(null)
+    setBestTier(null)
     setReadsSoFar(0)
+    setFinalOutcome(null)
 
     if (!('geolocation' in navigator)) {
       setState('unavailable')
@@ -51,9 +54,9 @@ export default function LocationConsent({ onLocated }) {
     let position
     try {
       position = await acquireBestPosition({
-        onProgress: ({ accuracy }) => {
+        onProgress: ({ tier }) => {
           setState('granted')
-          setBestAccuracy(accuracy)
+          setBestTier(tier)
           setReadsSoFar((n) => n + 1)
         },
       })
@@ -94,6 +97,10 @@ export default function LocationConsent({ onLocated }) {
       accuracy,
       source: position.source,
       captured_at: new Date(timestamp).toISOString(),
+      quality_class: position.quality,
+      acquisition_ms: position.acquisition_ms,
+      readings_count: (position.readings || []).length,
+      acquisition_status: position.status,
       ...geo,
     }
 
@@ -104,6 +111,7 @@ export default function LocationConsent({ onLocated }) {
       saveFailed = true
     }
 
+    setFinalOutcome(position.status === 'confirmed' ? 'confirmed' : 'approximate')
     setState('done')
     // Only forward a safe summary to the page — never raw coordinates
     onLocated({ success: !saveFailed, saveFailed, geocodeFailed })
@@ -202,13 +210,12 @@ export default function LocationConsent({ onLocated }) {
               <motion.div key="granted" {...fade} className="flex flex-col items-center py-4 text-center">
                 <Radar active />
                 <h2 className="mt-8 font-display text-2xl font-semibold text-snow sm:text-3xl">
-                  Refining precise location…
+                  Finding your precise location…
                 </h2>
                 <p className="mt-3 max-w-md text-sm leading-relaxed text-fog">
-                  Giving GPS a moment to stabilize for the most accurate fix.
-                  {bestAccuracy != null && readsSoFar > 0 && (
-                    <> Current best ~<span className="font-medium text-snow">{Math.round(bestAccuracy)} m</span> precision.</>
-                  )}
+                  {bestTier === 'poor' || bestTier === 'acceptable'
+                    ? 'Finding a more accurate location… Staying on until we get the best fix available.'
+                    : 'Confirming the most accurate fix for your current position.'}
                 </p>
                 <div className="mt-6 w-full max-w-sm space-y-2">
                   <div className="flex items-center justify-between font-mono text-[11px] text-fog/70">
@@ -241,7 +248,7 @@ export default function LocationConsent({ onLocated }) {
                   </motion.span>
                 </div>
                 <h2 className="mt-8 font-display text-3xl font-semibold text-snow">
-                  You&apos;re all set.
+                  {finalOutcome === 'approximate' ? 'We found your approximate location.' : 'Location confirmed'}
                 </h2>
                 <p className="mt-3 max-w-md text-sm leading-relaxed text-fog">
                   Your location has been securely received. Everything from here on uses

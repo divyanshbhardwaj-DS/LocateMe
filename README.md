@@ -32,8 +32,9 @@ npm run dev
 ```
 
 - `/` — landing page and permission flow
+- `/demo` — location-gated demo experience (mandatory consent gate → shopping demo)
 - `/admin/login` — admin sign-in
-- `/admin/dashboard` — protected dashboard (table + map)
+- `/admin/dashboard` — protected dashboard (table + map, auto-refreshing)
 
 Reverse geocoding runs on the **backend** via the Google Maps Platform
 Geocoding API (server-side key, never exposed to the browser). Address
@@ -63,6 +64,11 @@ accuracy circle) and an "Open in Google Maps" link.
 - Each stored record may include `accuracy`, `source` (e.g.
   `browser_high_accuracy`), and `captured_at`. The admin dashboard surfaces
   these; normal visitors only ever see a confirmation, never raw coordinates.
+- Acquisition quality is also captured per record: `quality_class`
+  (excellent ≤10 m / good ≤25 m / acceptable ≤50 m / poor), `acquisition_status`
+  (confirmed vs approximate), `acquisition_ms` (how long the fix took), and
+  `readings_count` (how many readings were evaluated). The UI classifies UX
+  quality but never fakes the device's reported accuracy.
 - If reverse geocoding or the save request fails, the captured location is
   still recorded from the best fix gathered.
 

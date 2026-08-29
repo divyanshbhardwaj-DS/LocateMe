@@ -13,23 +13,39 @@
  * simply allows the device's positioning to settle toward its best real fix.
  */
 
+// UX quality tiers (indicators, not guarantees).
 export const ACCURACY_QUALITY = [
-  { max: 10, label: 'Excellent', color: 'emerald' },
-  { max: 25, label: 'Very good', color: 'mint' },
-  { max: 50, label: 'Good', color: 'lime' },
-  { max: 100, label: 'Moderate', color: 'amber' },
-  { max: Infinity, label: 'Low', color: 'rose' },
+  { max: 10, tier: 'excellent', label: 'Excellent' },
+  { max: 25, tier: 'good', label: 'Good' },
+  { max: 50, tier: 'acceptable', label: 'Acceptable' },
+  { max: Infinity, tier: 'poor', label: 'Poor' },
 ]
 
-export function accuracyQuality(accuracy) {
+export function qualityTier(accuracy) {
   if (typeof accuracy !== 'number' || !isFinite(accuracy)) return 'unknown'
   for (const q of ACCURACY_QUALITY) {
-    if (accuracy <= q.max) return q.label
+    if (accuracy <= q.max) return q.tier
   }
-  return 'Low'
+  return 'poor'
 }
 
-// Stop as soon as we reach "very good" (<= 25m), or a strong GPS fix (<= 12m).
+export function tierLabel(tier) {
+  const map = {
+    excellent: 'Excellent',
+    good: 'Good',
+    acceptable: 'Acceptable',
+    poor: 'Poor',
+    unknown: 'Unknown',
+  }
+  return map[tier] || 'Unknown'
+}
+
+// Backward-compatible alias returning a human label for an accuracy value.
+export function accuracyQuality(accuracy) {
+  return tierLabel(qualityTier(accuracy))
+}
+
+// Stop as soon as we reach a "good" fix (<= 25m).
 const ACCEPT_ACCURACY = 25
 // Minimum number of readings before we finalize, so a single lucky fix is guarded.
 const MIN_READINGS = 3
@@ -41,6 +57,11 @@ const FIX_TIMEOUT = 15000
 const SETTLE_MS = 1300
 // Safety cap — never retain more than this many raw readings (avoids waste).
 const MAX_READINGS = 40
+// A "fresh" reading must not be older than this (ms) at acquisition time.
+const MAX_STALENESS_MS = 120000
+// A reading that snaps more than this (meters) from the running best in one
+// step is treated as an anomaly and ignored unless it keeps reappearing.
+const ANOMALY_JUMP_M = 150
 
 let currentWatchId = null
 let cancelSignal = null
@@ -77,9 +98,53 @@ function cleanCoords(c) {
   }
 }
 
+function isValidCoordinates(coords) {
+  return (
+    coords &&
+    typeof coords.latitude === 'number' &&
+    isFinite(coords.latitude) &&
+    coords.latitude >= -90 &&
+    coords.latitude <= 90 &&
+    typeof coords.longitude === 'number' &&
+    isFinite(coords.longitude) &&
+    coords.longitude >= -180 &&
+    coords.longitude <= 180
+  )
+}
+
+function isFresh(timestamp) {
+  if (!timestamp) return true
+  const age = Date.now() - timestamp
+  return age >= -10000 && age <= MAX_STALENESS_MS
+}
+
+// Haversine distance in meters between two coordinate pairs.
+function distanceMeters(a, b) {
+  const R = 6371000
+  const dLat = ((b.latitude - a.latitude) * Math.PI) / 180
+  const dLng = ((b.longitude - a.longitude) * Math.PI) / 180
+  const la1 = (a.latitude * Math.PI) / 180
+  const la2 = (b.latitude * Math.PI) / 180
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(h))
+}
+
+// A reading is kept only if it is plausible: valid coords, fresh timestamp,
+// and (once we have a baseline) not an unphysical one-step jump.
+function isUsableReading(reading, baseline) {
+  if (!isValidCoordinates(reading.coords)) return false
+  if (!isFresh(reading.timestamp)) return false
+  if (baseline && distanceMeters(reading.coords, baseline.coords) > ANOMALY_JUMP_M) {
+    return false
+  }
+  return true
+}
+
 function pickBest(readings) {
   // Prefer the reading with the lowest reported accuracy (finest fix).
-  const valid = readings.filter((r) => r.coords.accuracy != null)
+  const valid = readings.filter((r) => r.coords.accuracy != null && isValidCoordinates(r.coords))
   if (!valid.length) return null
   return [...valid].sort((a, b) => a.coords.accuracy - b.coords.accuracy)[0]
 }
@@ -93,8 +158,8 @@ function pickBest(readings) {
  * single high-accuracy `getCurrentPosition` call so we still obtain the best
  * position the device can offer rather than failing outright.
  *
- * @param {{onProgress?: (best: {accuracy: number, timestamp: number}) => void}} opts
- * @returns {Promise<{position, readings, source: string}>}
+ * @param {{onProgress?: (best: {accuracy: number, timestamp: number, tier: string}) => void}} opts
+ * @returns {Promise<{position, readings, source: string, quality: string, quality_label: string, acquisition_ms: number, status: string}>}
  */
 export function acquireBestPosition(opts = {}) {
   return new Promise((resolve, reject) => {
@@ -104,11 +169,13 @@ export function acquireBestPosition(opts = {}) {
     }
 
     const readings = []
+    const startedAt = Date.now()
     let watcherId = null
     let settleTimer = null
     let previousBestAccuracy = Infinity
     let finalized = false
     let fallbackTried = false
+    let establishedBest = null
 
     const finish = () => {
       if (finalized) return
@@ -124,7 +191,16 @@ export function acquireBestPosition(opts = {}) {
         reject(new Error('no-fix'))
         return
       }
-      resolve({ position: best, readings, source: 'browser_high_accuracy' })
+      const quality = qualityTier(best.coords.accuracy)
+      resolve({
+        position: best,
+        readings,
+        source: 'browser_high_accuracy',
+        quality,
+        quality_label: tierLabel(quality),
+        acquisition_ms: Date.now() - startedAt,
+        status: quality === 'excellent' || quality === 'good' ? 'confirmed' : 'approximate',
+      })
     }
 
     const windowTimer = setTimeout(() => finish(), MAX_WINDOW)
@@ -143,18 +219,39 @@ export function acquireBestPosition(opts = {}) {
 
     function handleReading(pos) {
       if (finalized) return
-      if (readings.length < MAX_READINGS) {
-        readings.push({
-          coords: cleanCoords(pos.coords),
-          timestamp: pos.timestamp || Date.now(),
-        })
+
+      const candidate = {
+        coords: cleanCoords(pos.coords),
+        timestamp: pos.timestamp || Date.now(),
       }
+      // Reject invalid coordinates, stale timestamps, and acute one-step jumps
+      // from an already-established best — unless the new point is clearly and
+      // substantially better (e.g. a Wi-Fi fix refining to a GPS fix).
+      if (!isValidCoordinates(candidate.coords)) return
+      if (!isFresh(candidate.timestamp)) return
+      if (
+        establishedBest &&
+        !isUsableReading(candidate, establishedBest) &&
+        !(
+          candidate.coords.accuracy != null &&
+          establishedBest.coords.accuracy != null &&
+          candidate.coords.accuracy <= establishedBest.coords.accuracy / 2
+        )
+      ) {
+        return
+      }
+      if (readings.length < MAX_READINGS) readings.push(candidate)
 
       const best = pickBest(readings)
       if (opts.onProgress && best) {
-        opts.onProgress({ accuracy: best.coords.accuracy, timestamp: best.timestamp })
+        opts.onProgress({
+          accuracy: best.coords.accuracy,
+          timestamp: best.timestamp,
+          tier: qualityTier(best.coords.accuracy),
+        })
       }
       if (!best) return
+      establishedBest = best
 
       const accuracy = best.coords.accuracy
       const improved = accuracy < previousBestAccuracy

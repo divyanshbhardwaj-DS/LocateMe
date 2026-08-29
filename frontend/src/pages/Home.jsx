@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import Nav, { PinMark } from '../components/Nav.jsx'
 import BackgroundFX from '../components/BackgroundFX.jsx'
@@ -45,6 +46,9 @@ export default function Home() {
                 <button onClick={scrollToConsent} className="btn-primary w-full sm:w-auto">
                   Get started
                 </button>
+                <Link to="/demo" className="btn-ghost w-full sm:w-auto">
+                  Try the location-gated demo
+                </Link>
                 <a href="#how" className="btn-ghost w-full sm:w-auto">
                   See how it works
                 </a>
@@ -140,15 +144,20 @@ export default function Home() {
                   </span>
                   <span className="chip border border-line2 bg-panel2 text-fog">Private by design</span>
                 </div>
-                <button
-                  onClick={() => {
-                    setLocated(null)
-                    scrollToConsent()
-                  }}
-                  className="btn-ghost mt-8"
-                >
-                  {located.saveFailed ? 'Retry verification' : 'Start over'}
-                </button>
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                  <Link to="/demo" className="btn-primary w-full sm:w-auto">
+                    Continue to the demo →
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setLocated(null)
+                      scrollToConsent()
+                    }}
+                    className="btn-ghost w-full sm:w-auto"
+                  >
+                    {located.saveFailed ? 'Retry verification' : 'Start over'}
+                  </button>
+                </div>
                 {located.saveFailed && (
                   <p className="mt-4 max-w-md rounded-xl border border-warning/25 bg-warning/10 px-4 py-3 text-sm text-warning">
                     Your location was detected, but we hit a temporary snag saving it.

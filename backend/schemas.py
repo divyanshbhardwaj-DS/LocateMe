@@ -14,6 +14,10 @@ class LocationCreate(BaseModel):
     country: Optional[str] = None
     postal_code: Optional[str] = None
     address: Optional[str] = None
+    quality_class: Optional[str] = None
+    acquisition_ms: Optional[int] = None
+    readings_count: Optional[int] = None
+    acquisition_status: Optional[str] = None
 
 
 class LocationOut(BaseModel):
@@ -40,6 +44,10 @@ class LocationOut(BaseModel):
     plus_code: Optional[str] = None
     geocode_type: Optional[str] = None
     geocode_source: Optional[str] = None
+    quality_class: Optional[str] = None
+    acquisition_ms: Optional[int] = None
+    readings_count: Optional[int] = None
+    acquisition_status: Optional[str] = None
     created_at: datetime
 
     class Config:

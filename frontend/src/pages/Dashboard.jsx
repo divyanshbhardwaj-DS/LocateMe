@@ -19,14 +19,19 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const reduceMotion = useReducedMotion()
 
+  // Live refresh: poll the backend while the dashboard is open so a newly
+  // granted location appears in near real-time without extra infrastructure.
   useEffect(() => {
     let active = true
-    async function load() {
+    let interval
+
+    async function load(silent) {
       try {
         const [locs, s] = await Promise.all([fetchLocations(), fetchStats()])
         if (!active) return
         setLocations(locs)
         setStats(s)
+        setLoadError(false)
       } catch (err) {
         if (!active) return
         if (err.message === 'unauthorized') {
@@ -36,12 +41,17 @@ export default function Dashboard() {
           setLoadError(true)
         }
       } finally {
-        if (active) setLoading(false)
+        if (active && !silent) setLoading(false)
       }
     }
-    load()
+
+    load(false)
+    // Background refresh every 6s. If the error screen is showing, a manual
+    // "Retry" already re-reads on mount — stop polling to avoid hammering.
+    interval = setInterval(() => load(true), 6000)
     return () => {
       active = false
+      clearInterval(interval)
     }
   }, [navigate])
 
@@ -144,11 +154,11 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between border-b border-line px-6 py-4">
                   <div>
                     <h2 className="font-display text-lg font-semibold text-snow">Submission map</h2>
-                    <p className="text-xs text-fog">Live positions of every received submission</p>
+                    <p className="text-xs text-fog">Live positions of every received submission · auto-refreshing</p>
                   </div>
                   <span className="chip border border-line2 bg-panel2 text-fog">
                     <span className="h-1.5 w-1.5 rounded-full bg-mint animate-pulse" />
-                    {locations.length} {locations.length === 1 ? 'pin' : 'pins'}
+                    Live · {locations.length} {locations.length === 1 ? 'pin' : 'pins'}
                   </span>
                 </div>
                 <MultiLocationMap locations={locations} onSelect={setSelected} />
@@ -193,8 +203,11 @@ export default function Dashboard() {
                           : '—'
                       }
                     />
-                    <Detail label="Location quality" value={qualityLabel(selected.accuracy)} />
+                    <Detail label="Location quality" value={qualityLabel(selected.accuracy, selected.quality_class)} />
+                    <Detail label="Acquisition status" value={acquisitionStatusLabel(selected.acquisition_status)} />
                     <Detail label="Captured" value={selected.captured_at ? formatDate(selected.captured_at) : formatDate(selected.created_at)} />
+                    <Detail label="Acquisition duration" value={selected.acquisition_ms != null ? `${(selected.acquisition_ms / 1000).toFixed(1)} s` : '—'} />
+                    <Detail label="Readings used" value={selected.readings_count != null ? String(selected.readings_count) : '—'} />
                     <Detail label="Latitude" value={selected.latitude.toFixed(6)} mono />
                     <Detail label="Longitude" value={selected.longitude.toFixed(6)} mono />
                     <Detail label="Google Place ID" value={selected.place_id || '—'} mono />
@@ -373,13 +386,26 @@ function sourceLabel(source) {
   return (source && map[source]) || source || '—'
 }
 
-function qualityLabel(accuracy) {
+function qualityLabel(accuracy, qualityClass) {
+  const q = qualityClass
+  if (q === 'excellent') return '★★★★★ Excellent (≤10 m)'
+  if (q === 'good') return '★★★★ Good (≤25 m)'
+  if (q === 'acceptable') return '★★★ Acceptable (≤50 m)'
+  if (q === 'poor') return '★★ Poor (>50 m)'
+  // Fall back to the reported accuracy value.
   if (accuracy == null) return '—'
-  if (accuracy < 10) return '★★★★★ Excellent'
-  if (accuracy < 25) return '★★★★ Very good'
-  if (accuracy < 50) return '★★★ Good'
-  if (accuracy < 100) return '★★ Moderate'
-  return '★ Low'
+  if (accuracy < 10) return '★★★★★ Excellent (≤10 m)'
+  if (accuracy < 25) return '★★★★ Good (≤25 m)'
+  if (accuracy < 50) return '★★★ Acceptable (≤50 m)'
+  return '★★ Poor (>50 m)'
+}
+
+function acquisitionStatusLabel(status) {
+  const map = {
+    confirmed: 'Confirmed · high precision',
+    approximate: 'Approximate · area-level',
+  }
+  return (status && map[status]) || status || '—'
 }
 
 function timeAgo(iso) {

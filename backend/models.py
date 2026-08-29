@@ -29,6 +29,11 @@ class Location(Base):
     plus_code = Column(String, nullable=True)
     geocode_type = Column(String, nullable=True)
     geocode_source = Column(String, nullable=True)
+    # --- Acquisition quality metadata (additive) ---
+    quality_class = Column(String, nullable=True)
+    acquisition_ms = Column(Integer, nullable=True)
+    readings_count = Column(Integer, nullable=True)
+    acquisition_status = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

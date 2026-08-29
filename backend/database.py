@@ -33,6 +33,10 @@ def run_migrations() -> None:
         "plus_code": "VARCHAR(64)",
         "geocode_type": "VARCHAR(64)",
         "geocode_source": "VARCHAR(32)",
+        "quality_class": "VARCHAR(32)",
+        "acquisition_ms": "INTEGER",
+        "readings_count": "INTEGER",
+        "acquisition_status": "VARCHAR(32)",
     }
     with engine.begin() as conn:
         for name, decl in additions.items():
