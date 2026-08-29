@@ -14,8 +14,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/demo" element={<DemoExperience />} />
+        {/* The site opens straight into the mandatory location gate. */}
+        <Route path="/" element={<DemoExperience />} />
+        {/* Marketing/landing page (kept reachable so no core functionality is lost). */}
+        <Route path="/home" element={<Home />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route
           path="/admin/dashboard"

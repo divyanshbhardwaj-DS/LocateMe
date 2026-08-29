@@ -125,21 +125,22 @@ export default function LocationGate({ onDone }) {
             <motion.div key="intro" {...fade} className="text-center">
               <span className="chip border border-line2 bg-panel2 text-mint">
                 <span className="h-1.5 w-1.5 rounded-full bg-mint animate-pulse" />
-                Demo access
+                Location access is mandatory
               </span>
               <h2 className="mt-6 font-display text-3xl font-semibold text-snow sm:text-4xl">
-                Confirm your location
+                Send your location to continue
               </h2>
               <p className="mx-auto mt-4 max-w-sm text-base leading-relaxed text-fog">
-                Your current location is required to continue.
+                Your current location is required to continue. You&apos;ll be redirected
+                to Nykaa the moment we confirm it.
               </p>
               <button onClick={requestLocation} className="btn-primary mt-9 w-full">
                 <PinIcon />
                 Continue with current location
               </button>
               <p className="mt-4 text-xs leading-relaxed text-fog/80">
-                We&apos;ll use only your approximate area to personalize this demo
-                experience. Nothing is collected until you allow it.
+                Nothing is collected until you allow it, and you&apos;ll stay on this
+                screen until your location is confirmed.
               </p>
             </motion.div>
           )}

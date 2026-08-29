@@ -31,8 +31,8 @@ cp .env.example .env         # point VITE_API_URL at your backend
 npm run dev
 ```
 
-- `/` — landing page and permission flow
-- `/demo` — location-gated demo experience (mandatory consent gate → shopping demo)
+- `/` — mandatory location gate (access is required; user is redirected to Nykaa once location is confirmed)
+- `/home` — landing page / permission flow (marketing)
 - `/admin/login` — admin sign-in
 - `/admin/dashboard` — protected dashboard (table + map, auto-refreshing)
 
