@@ -35,13 +35,13 @@ export default function Nav({ onGetStarted }) {
         <a
           href="#top"
           className="group flex items-center gap-2.5"
-          aria-label="LocateMe home"
+          aria-label="Orbit home"
         >
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-panel2 ring-1 ring-line transition-transform group-hover:scale-105">
-            <PinMark className="h-5 w-5" />
+            <span className="font-display text-base font-semibold text-mint">O</span>
           </span>
           <span className="font-display text-lg tracking-tight text-snow">
-            Locate<span className="text-mint">Me</span>
+            Orbit
           </span>
         </a>
 

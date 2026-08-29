@@ -59,7 +59,7 @@ export function Features() {
     <section id="features" className="relative mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
       <Reveal>
         <SectionHeading
-          eyebrow="Why LocateMe"
+          eyebrow="Why Orbit"
           title="Built to be trusted with a detail that matters"
           sub="Location is personal. We treat it that way — with clear permission, honest explanations, and no hidden collection."
         />

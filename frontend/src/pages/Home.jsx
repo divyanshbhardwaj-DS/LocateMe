@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import Nav, { PinMark } from '../components/Nav.jsx'
+import Nav from '../components/Nav.jsx'
 import BackgroundFX from '../components/BackgroundFX.jsx'
 import LocationConsent from '../components/LocationConsent.jsx'
 import Radar from '../components/Radar.jsx'
@@ -36,7 +36,7 @@ export default function Home() {
             </Reveal>
             <Reveal delay={0.16}>
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-fog">
-                LocateMe pairs the accuracy of your real position with the privacy you
+                Orbit pairs the accuracy of your real position with the privacy you
                 expect. One clear permission, one stated purpose — and your details stay
                 private, never shared with other visitors.
               </p>
@@ -175,11 +175,8 @@ export default function Home() {
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-5 text-center sm:flex-row sm:justify-between sm:px-8 sm:text-left">
           <div className="flex flex-col items-center gap-3 sm:items-start">
             <div className="flex items-center gap-2.5">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-panel2 ring-1 ring-line">
-                <PinMark className="h-5 w-5" />
-              </span>
               <span className="font-display text-base text-snow">
-                Locate<span className="text-mint">Me</span>
+                Orbit
               </span>
             </div>
             <p className="max-w-xs text-xs leading-relaxed text-fog/70">
@@ -192,7 +189,7 @@ export default function Home() {
               Your location is only sent to our server after you allow it. Revoke it any
               time from your browser&apos;s site settings.
             </p>
-            <p className="font-mono text-fog/50">LocateMe · privacy-first by design</p>
+            <p className="font-mono text-fog/50">Orbit · privacy-first by design</p>
           </div>
         </div>
       </footer>

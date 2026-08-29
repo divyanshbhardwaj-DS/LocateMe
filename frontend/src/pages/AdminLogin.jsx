@@ -102,7 +102,7 @@ export default function AdminLogin() {
 
             <p className="pt-1 text-center text-xs text-fog/70">
               <Link to="/" className="transition-colors hover:text-mint">
-                &larr; Back to LocateMe
+                &larr; Back to Orbit
               </Link>
             </p>
           </form>

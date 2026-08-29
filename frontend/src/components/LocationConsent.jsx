@@ -139,7 +139,7 @@ export default function LocationConsent({ onLocated }) {
                   A better experience.
                 </h2>
                 <p className="mt-4 text-base leading-relaxed text-fog">
-                  Your location lets LocateMe deliver accurate, personalized
+                  Your location lets Orbit deliver accurate, personalized
                   on-the-ground information. It&apos;s the single reason we ever ask.
                   Nothing more, nothing hidden.
                 </p>

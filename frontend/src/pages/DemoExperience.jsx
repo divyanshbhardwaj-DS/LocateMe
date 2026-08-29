@@ -6,11 +6,9 @@ import BackgroundFX from '../components/BackgroundFX.jsx'
 const REDIRECT_URL = 'https://www.nykaa.com'
 
 /**
- * Route-level mandatory gate: the site opens straight into the location
- * requirement screen. Until a valid location is provided the user stays here
- * ("Location access is mandatory"). Once location is acquired — and securely
- * saved to the backend by LocationGate — we show a brief "Location confirmed ✓"
- * moment, then redirect the user to the real Nykaa site.
+ * Entry screen: the site opens straight here. It stays on a clean, minimal
+ * confirmation card until the browser permission is granted; once granted we
+ * briefly signal the redirect, then send the user to the partner store.
  */
 export default function DemoExperience() {
   const reduceMotion = useReducedMotion()
@@ -22,7 +20,7 @@ export default function DemoExperience() {
     setRedirecting(true)
     const t = setTimeout(() => {
       window.location.assign(REDIRECT_URL)
-    }, reduceMotion ? 0 : 1200)
+    }, reduceMotion ? 0 : 1000)
     return () => clearTimeout(t)
   }, [confirmed, reduceMotion])
 
@@ -57,40 +55,20 @@ function RedirectingNote() {
       className="mt-5 flex items-center gap-2 text-sm text-fog"
     >
       <span className="h-2 w-2 animate-ping rounded-full bg-mint" />
-      Location confirmed — taking you to Nykaa…
+      Redirecting you now…
     </motion.p>
   )
 }
 
 function BrandHead() {
   return (
-    <div className="mb-8 flex flex-col items-center gap-3 text-center">
-      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-panel2 ring-1 ring-line shadow-card">
-        <PinMark />
+    <div className="mb-8 flex flex-col items-center gap-2 text-center">
+      <span className="font-display text-2xl font-semibold tracking-tight text-snow">
+        Orbit
       </span>
-      <div>
-        <p className="font-display text-2xl font-semibold tracking-tight text-snow">
-          Locate<span className="text-mint">Me</span>
-        </p>
-        <p className="mt-1 font-mono text-[11px] uppercase tracking-widest text-fog/70">
-          Location-gated demo
-        </p>
-      </div>
+      <p className="font-mono text-[11px] uppercase tracking-widest text-fog/70">
+        One quick step to continue
+      </p>
     </div>
-  )
-}
-
-function PinMark() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden>
-      <path d="M12 21.5c4-4.7 6-8.1 6-11.2A6 6 0 0 0 6 10.3c0 3.1 2 6.5 6 11.2Z" stroke="url(#lg)" strokeWidth="1.8" fill="rgba(60,224,168,0.14)" />
-      <circle cx="12" cy="10.3" r="2.1" fill="url(#lg)" />
-      <defs>
-        <linearGradient id="lg" x1="8" y1="6" x2="16" y2="18" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#3CE0A8" />
-          <stop offset="1" stopColor="#22D3EE" />
-        </linearGradient>
-      </defs>
-    </svg>
   )
 }
