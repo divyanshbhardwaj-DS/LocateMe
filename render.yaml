@@ -1,0 +1,38 @@
+# Render Blueprint — deploys the LocateMe backend Web Service and frontend Static Site.
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  # ---------- Backend API (FastAPI) ----------
+  - type: web
+    name: locateme-api
+    runtime: docker
+    repo: https://github.com/divyanshbhardwaj-DS/LocateMe
+    plan: free
+    dockerfilePath: ./Dockerfile
+    rootDir: backend
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false # set manually in the Render dashboard to your Render Postgres URL
+      - key: ADMIN_SECRET
+        generateValue: true
+      - key: ADMIN_USERNAME
+        sync: false # set manually (e.g. admin) — seeds the first admin on startup
+      - key: ADMIN_PASSWORD
+        sync: false # set manually to a strong password — seeds the first admin on startup
+      - key: CORS_ORIGINS
+        sync: false # set manually to your frontend URL, e.g. https://locateme-frontend.onrender.com
+
+  # ---------- Frontend (React + Vite static site) ----------
+  - type: web
+    name: locateme-frontend
+    runtime: static
+    repo: https://github.com/divyanshbhardwaj-DS/LocateMe
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    publishPath: dist
+    buildFilter:
+      paths:
+        - frontend/**
+    envVars:
+      - key: VITE_API_URL
+        sync: false # set manually to your backend URL, e.g. https://locateme-api.onrender.com
